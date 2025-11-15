@@ -1,34 +1,414 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Programa C++</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        pre {
-            background: #222;
-            color: #0f0;
-            padding: 20px;
-            border-radius: 8px;
-            white-space: pre-wrap;
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calculadora de Errores — Volumen & Densidad</title>
+<style>
+  :root{
+    --accent:#3949ab;
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --muted:#6b7280;
+  }
+  body{font-family:Inter,system-ui,Arial; background:var(--bg); margin:0; padding:24px; color:#111;}
+  .wrap{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 420px;gap:20px;}
+  header{grid-column:1/-1; text-align:center;margin-bottom:6px;}
+  h1{margin:4px 0;color:var(--accent);}
+  .card{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(10,20,60,0.06);}
+  label{display:block;font-weight:600;margin-top:10px;color:#222;}
+  select,input{width:100%;padding:10px;border-radius:8px;border:1px solid #d1d5db;margin-top:6px;box-sizing:border-box;}
+  .row{display:flex;gap:10px;}
+  .row > *{flex:1;}
+  button{background:var(--accent);color:white;padding:10px;border-radius:8px;border:0;cursor:pointer;margin-top:12px;}
+  button.secondary{background:#e2e8f0;color:#111;}
+  small{color:var(--muted);}
+  .list{max-height:360px;overflow:auto;margin-top:10px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px;}
+  th,td{padding:8px;border-bottom:1px solid #eef2ff;text-align:left;}
+  .muted{color:var(--muted);font-size:13px;}
+  .result{background:#fafbff;padding:10px;border-radius:8px;margin-top:12px;border:1px solid #edf0ff;}
+  .flex{display:flex;gap:8px;align-items:center;}
+  .small-btn{padding:6px 8px;border-radius:6px;border:0;background:#eef2ff;color:var(--accent);cursor:pointer;}
+  footer{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;margin-top:14px;}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr;}}
+</style>
 </head>
 <body>
+  <div class="wrap">
+    <header>
+      <h1>Calculadora de Análisis de Errores — Volumen & Densidad</h1>
+      <div class="muted">Basado en la lógica del programa C++ — ingresa medidas y obtén promedios, errores, volúmenes y regresión</div>
+    </header>
 
-<h1>Mi código C++</h1>
-<p>Aquí se muestra el contenido del archivo <strong>main.cpp</strong>:</p>
+    <!-- Left: Form + list -->
+    <div class="card">
+      <label>Forma</label>
+      <select id="forma">
+        <option value="1">1 — Cuadrado (prisma cuadrado)</option>
+        <option value="2">2 — Esfera</option>
+        <option value="3">3 — Cilindro</option>
+        <option value="4">4 — Cuna</option>
+        <option value="5">5 — Cono</option>
+      </select>
 
-<pre>
-<?php
-    echo htmlspecialchars(file_get_contents("main.cpp"));
-?>
-</pre>
+      <label>Masa (g) <small class="muted">— se considera 1 medida</small></label>
+      <input id="masa" type="number" step="any" placeholder="Ej: 12.5">
 
+      <div id="measures-area">
+        <label>L1 — (4 medidas en cm)</label>
+        <div class="row">
+          <input id="l1-1" type="number" step="any" placeholder="m1">
+          <input id="l1-2" type="number" step="any" placeholder="m2">
+          <input id="l1-3" type="number" step="any" placeholder="m3">
+          <input id="l1-4" type="number" step="any" placeholder="m4">
+        </div>
+
+        <div id="l2-block">
+          <label>L2 — (4 medidas en cm)</label>
+          <div class="row">
+            <input id="l2-1" type="number" step="any" placeholder="m1">
+            <input id="l2-2" type="number" step="any" placeholder="m2">
+            <input id="l2-3" type="number" step="any" placeholder="m3">
+            <input id="l2-4" type="number" step="any" placeholder="m4">
+          </div>
+        </div>
+
+        <div id="l3-block" style="display:none">
+          <label>L3 — (4 medidas en cm)</label>
+          <div class="row">
+            <input id="l3-1" type="number" step="any" placeholder="m1">
+            <input id="l3-2" type="number" step="any" placeholder="m2">
+            <input id="l3-3" type="number" step="any" placeholder="m3">
+            <input id="l3-4" type="number" step="any" placeholder="m4">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex" style="margin-top:12px;">
+        <button id="addBtn">Agregar objeto</button>
+        <button id="resetBtn" class="secondary">Limpiar campos</button>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">Nota: medidas en cm, masa en g. Errores calculados como desviación muestral y propagación lineal.</div>
+
+      <div class="list">
+        <h3 style="margin-top:14px;">Objetos añadidos</h3>
+        <table id="objetosTable"><thead><tr><th>#</th><th>Forma</th><th>M(g)</th><th>V(cm³)</th><th>D(g/cm³)</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <!-- Right: Results & regression -->
+    <div class="card">
+      <h3>Resumen (selecciona un objeto para ver detalles)</h3>
+      <div id="detalle" class="result">No hay objeto seleccionado.</div>
+
+      <h3 style="margin-top:14px;">Tablas & Regresión</h3>
+      <div id="tables" class="result">
+        <div id="tabla1">Tabla 1: Medidas directas (vacia)</div>
+        <div id="tabla2" style="margin-top:8px;">Tabla 2: Medidas indirectas (vacia)</div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <button id="calcRegBtn" class="small-btn">Calcular Regresión (M vs V)</button>
+      </div>
+
+      <div id="regresion" class="result" style="display:none;margin-top:12px;"></div>
+
+      <div style="margin-top:12px;">
+        <label>Densidad teórica (g/cm³)</label>
+        <input id="densTeorica" type="number" step="any" placeholder="Ej: 7.87">
+        <button id="compBtn" class="small-btn" style="margin-top:8px;">Comparar con teórico</button>
+        <div id="compRes" class="muted" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <footer>Hecho con ❤️ — copia el archivo index.html y súbelo en GitHub Pages</footer>
+  </div>
+
+<script>
+/* ---------- funciones matemáticas (imitando C++ original) ---------- */
+const PI = Math.PI;
+function promedio(arr){
+  const n = arr.length;
+  let s=0;
+  for(let v of arr) s+=v;
+  return s/n;
+}
+function errorAbsoluto(arr, prom){
+  const n = arr.length;
+  if(n<2) return 0;
+  let s=0;
+  for(let v of arr) s += (v-prom)*(v-prom);
+  return Math.sqrt(s/(n-1)); // desviación muestral
+}
+function errorRelativoPercent(errorAbs, prom){
+  if(prom===0) return 0;
+  return (errorAbs/prom)*100;
+}
+
+/* ---------- formulas de volumen y errores ---------- */
+function volumenCuadrado(lado, alto){ return Math.pow(lado,2) * alto; }
+function errorVolumenCuadrado(lado, alto, eL, eH){
+  const dVdl = 2.0 * lado * alto;
+  const dVdh = Math.pow(lado,2);
+  return Math.sqrt(Math.pow(dVdl*eL,2) + Math.pow(dVdh*eH,2));
+}
+function volumenEsfera(r){ return (4.0/3.0)*PI*Math.pow(r,3); }
+function errorVolumenEsfera(r, eR){ return 4.0*PI*Math.pow(r,2)*eR; }
+function volumenCilindro(r,h){ return PI*Math.pow(r,2)*h; }
+function errorVolumenCilindro(r,h,eR,eH){
+  const dVdr = 2.0*PI*r*h;
+  const dVdh = PI*Math.pow(r,2);
+  return Math.sqrt(Math.pow(dVdr*eR,2) + Math.pow(dVdh*eH,2));
+}
+function volumenCuna(l,a,h){ return 0.5*l*a*h; }
+function errorVolumenCuna(l,a,h,eL,eA,eH){
+  return 0.5 * Math.sqrt(Math.pow(a*h*eL,2)+Math.pow(l*h*eA,2)+Math.pow(l*a*eH,2));
+}
+function volumenCono(r,h){ return (1.0/3.0)*PI*Math.pow(r,2)*h; }
+function errorVolumenCono(r,h,eR,eH){
+  const dVdr = (2.0/3.0)*PI*r*h;
+  const dVdh = (1.0/3.0)*PI*Math.pow(r,2);
+  return Math.sqrt(Math.pow(dVdr*eR,2) + Math.pow(dVdh*eH,2));
+}
+
+/* ---------- UI & lógica ---------- */
+const formaEl = document.getElementById('forma');
+const l2Block = document.getElementById('l2-block');
+const l3Block = document.getElementById('l3-block');
+
+function updateFields(){
+  const f = formaEl.value;
+  // forma 2 = esfera -> solo L1 (radio), hide L2
+  if(f === "2"){
+    l2Block.style.display = 'none';
+    l3Block.style.display = 'none';
+  } else if(f === "4"){ // cuna uses L1,L2,L3
+    l2Block.style.display = 'block';
+    l3Block.style.display = 'block';
+  } else { // others: need L1 and L2
+    l2Block.style.display = 'block';
+    l3Block.style.display = 'none';
+  }
+}
+formaEl.addEventListener('change', updateFields);
+updateFields();
+
+/* objetos almacenados */
+let objetos = [];
+
+function leerMedidas(prefix){
+  return [
+    parseFloat(document.getElementById(prefix+'-1').value) || 0,
+    parseFloat(document.getElementById(prefix+'-2').value) || 0,
+    parseFloat(document.getElementById(prefix+'-3').value) || 0,
+    parseFloat(document.getElementById(prefix+'-4').value) || 0
+  ];
+}
+
+function procesarMedidaFromArray(arr){
+  const prom = promedio(arr);
+  const errAbs = errorAbsoluto(arr, prom);
+  const errRel = errorRelativoPercent(errAbs, prom);
+  return {valores: arr, promedio: prom, errorAbsoluto: errAbs, errorRelativoPorcentual: errRel};
+}
+
+function calcularVolYError(obj){
+  // Note: inputs are in cm; volumes will be in cm^3 (consistent with C++ original)
+  const f = obj.forma;
+  if(f === "1"){ // Cuadrado (prisma)
+    obj.volumen = volumenCuadrado(obj.L1.promedio, obj.L2.promedio);
+    obj.errorVolumen = errorVolumenCuadrado(obj.L1.promedio, obj.L2.promedio, obj.L1.errorAbsoluto, obj.L2.errorAbsoluto);
+  } else if(f === "2"){ // Esfera
+    obj.volumen = volumenEsfera(obj.L1.promedio);
+    obj.errorVolumen = errorVolumenEsfera(obj.L1.promedio, obj.L1.errorAbsoluto);
+  } else if(f === "3"){ // Cilindro
+    obj.volumen = volumenCilindro(obj.L1.promedio, obj.L2.promedio);
+    obj.errorVolumen = errorVolumenCilindro(obj.L1.promedio, obj.L2.promedio, obj.L1.errorAbsoluto, obj.L2.errorAbsoluto);
+  } else if(f === "4"){ // Cuna
+    obj.volumen = volumenCuna(obj.L1.promedio, obj.L2.promedio, obj.L3.promedio);
+    obj.errorVolumen = errorVolumenCuna(obj.L1.promedio, obj.L2.promedio, obj.L3.promedio, obj.L1.errorAbsoluto, obj.L2.errorAbsoluto, obj.L3.errorAbsoluto);
+  } else if(f === "5"){ // Cono
+    obj.volumen = volumenCono(obj.L1.promedio, obj.L2.promedio);
+    obj.errorVolumen = errorVolumenCono(obj.L1.promedio, obj.L2.promedio, obj.L1.errorAbsoluto, obj.L2.errorAbsoluto);
+  }
+}
+
+function calcularDensidad(obj){
+  // masa en g, volumen in cm^3 -> densidad g/cm^3
+  obj.densidad = (obj.masaPromedio) / obj.volumen;
+  const errRelM = obj.errorMasa / obj.masaPromedio;
+  const errRelV = obj.errorVolumen / obj.volumen;
+  obj.errorDensidad = obj.densidad * Math.sqrt(errRelM*errRelM + errRelV*errRelV);
+}
+
+/* UI: agregar objeto */
+document.getElementById('addBtn').addEventListener('click', () => {
+  const f = formaEl.value;
+  const masa = parseFloat(document.getElementById('masa').value);
+  if(!masa || masa<=0){ alert('Ingresa una masa válida'); return; }
+  const obj = { forma: f, nombreForma: "", masaMedidas: [], masaPromedio: masa, errorMasa: 0.01, L1:null, L2:null, L3:null, volumen:0, errorVolumen:0, densidad:0, errorDensidad:0 };
+  obj.nombreForma = { "1":"Cuadrado","2":"Esfera","3":"Cilindro","4":"Cuna","5":"Cono" }[f];
+
+  obj.masaMedidas = [masa,masa,masa,masa]; // como en C++
+  // leer L1
+  const arr1 = leerMedidas('l1');
+  obj.L1 = procesarMedidaFromArray(arr1);
+
+  if(f !== "2"){ // L2 required except sphere
+    const arr2 = leerMedidas('l2');
+    obj.L2 = procesarMedidaFromArray(arr2);
+  } else {
+    obj.L2 = {valores:[], promedio:0, errorAbsoluto:0, errorRelativoPorcentual:0};
+  }
+  if(f === "4"){ // cuna has L3
+    const arr3 = leerMedidas('l3');
+    obj.L3 = procesarMedidaFromArray(arr3);
+  } else {
+    obj.L3 = {valores:[], promedio:0, errorAbsoluto:0, errorRelativoPorcentual:0};
+  }
+
+  // validations minimal
+  if(obj.L1.promedio===0){ alert('Ingresa las medidas de L1'); return; }
+  if(f!=="2" && obj.L2.promedio===0){ alert('Ingresa las medidas de L2'); return; }
+  if(f==="4" && obj.L3.promedio===0){ alert('Ingresa las medidas de L3'); return; }
+
+  // calcular vol y densidad
+  calcularVolYError(obj);
+  calcularDensidad(obj);
+
+  objetos.push(obj);
+  renderObjetosTable();
+  updateTablas();
+  clearInputs();
+});
+
+/* limpiar campos */
+document.getElementById('resetBtn').addEventListener('click', clearInputs);
+function clearInputs(){
+  document.getElementById('masa').value = '';
+  for(let i=1;i<=4;i++){
+    document.getElementById('l1-'+i).value='';
+    document.getElementById('l2-'+i).value='';
+    document.getElementById('l3-'+i).value='';
+  }
+}
+
+/* render tabla de objetos */
+function renderObjetosTable(){
+  const tbody = document.querySelector('#objetosTable tbody');
+  tbody.innerHTML = '';
+  objetos.forEach((o, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${idx+1}</td>
+      <td>${o.nombreForma}</td>
+      <td>${o.masaPromedio.toFixed(4)}</td>
+      <td>${o.volumen.toFixed(4)}</td>
+      <td>${o.densidad.toFixed(4)}</td>
+      <td><button class="small-btn" onclick="verDetalle(${idx})">Ver</button> <button class="small-btn" onclick="borrar(${idx})">Eliminar</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ver detalle */
+window.verDetalle = function(i){
+  const o = objetos[i];
+  const det = document.getElementById('detalle');
+  det.innerHTML = `<b>Objeto ${i+1} — ${o.nombreForma}</b>
+  <div class="muted">Masa: ${o.masaPromedio.toFixed(4)} g ± ${o.errorMasa} g</div>
+  <hr>
+  <b>L1:</b> prom=${o.L1.promedio.toFixed(4)} cm, errAbs=${o.L1.errorAbsoluto.toFixed(4)} cm, err%=${o.L1.errorRelativoPorcentual.toFixed(2)}%<br>
+  ${o.L2.valores.length ? `<b>L2:</b> prom=${o.L2.promedio.toFixed(4)} cm, errAbs=${o.L2.errorAbsoluto.toFixed(4)} cm, err%=${o.L2.errorRelativoPorcentual.toFixed(2)}%<br>` : ''}
+  ${o.L3.valores.length ? `<b>L3:</b> prom=${o.L3.promedio.toFixed(4)} cm, errAbs=${o.L3.errorAbsoluto.toFixed(4)} cm, err%=${o.L3.errorRelativoPorcentual.toFixed(2)}%<br>` : ''}
+  <hr>
+  <b>Volumen:</b> ${o.volumen.toFixed(6)} cm³ ± ${o.errorVolumen.toFixed(6)} cm³<br>
+  <b>Densidad:</b> ${o.densidad.toFixed(6)} g/cm³ ± ${o.errorDensidad.toFixed(6)} g/cm³
+  `;
+}
+
+/* borrar objeto */
+window.borrar = function(i){
+  if(!confirm('Eliminar objeto '+(i+1)+'?')) return;
+  objetos.splice(i,1);
+  renderObjetosTable();
+  updateTablas();
+  document.getElementById('detalle').innerText = 'No hay objeto seleccionado.';
+}
+
+/* tablas resumen */
+function updateTablas(){
+  const t1 = document.getElementById('tabla1');
+  const t2 = document.getElementById('tabla2');
+  if(objetos.length===0){
+    t1.innerText = 'Tabla 1: Medidas directas (vacia)';
+    t2.innerText = 'Tabla 2: Medidas indirectas (vacia)';
+    return;
+  }
+  let s1 = '<b>Tabla 1 — Medidas directas</b><br>';
+  objetos.forEach((o,i)=>{
+    s1 += `${i+1}) ${o.nombreForma} — M=${o.masaPromedio.toFixed(4)} g ± ${o.errorMasa} g; L1 prom=${o.L1.promedio.toFixed(3)} cm err=${o.L1.errorAbsoluto.toFixed(3)} cm<br>`;
+    if(o.L2.valores.length) s1 += `&nbsp;&nbsp;L2 prom=${o.L2.promedio.toFixed(3)} cm err=${o.L2.errorAbsoluto.toFixed(3)} cm<br>`;
+    if(o.L3.valores.length) s1 += `&nbsp;&nbsp;L3 prom=${o.L3.promedio.toFixed(3)} cm err=${o.L3.errorAbsoluto.toFixed(3)} cm<br>`;
+  });
+  t1.innerHTML = s1;
+
+  let s2 = '<b>Tabla 2 — Medidas indirectas</b><br>';
+  objetos.forEach((o,i)=>{
+    s2 += `${i+1}) V=${o.volumen.toFixed(6)} cm³ ± ${o.errorVolumen.toFixed(6)} ; D=${o.densidad.toFixed(6)} g/cm³ ± ${o.errorDensidad.toFixed(6)}<br>`;
+  });
+  t2.innerHTML = s2;
+}
+
+/* regresión lineal M vs V */
+document.getElementById('calcRegBtn').addEventListener('click', () => {
+  if(objetos.length < 2){ alert('Necesitas al menos 2 objetos para regresión'); return; }
+  const n = objetos.length;
+  let sumX=0, sumY=0, sumXY=0, sumX2=0;
+  for(let o of objetos){
+    const x = o.volumen, y = o.masaPromedio;
+    sumX += x; sumY += y; sumXY += x*y; sumX2 += x*x;
+  }
+  const pendiente = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX);
+  const intercepto = (sumY - pendiente*sumX) / n;
+  const promY = sumY / n;
+  let SSres=0, SStot=0;
+  for(let o of objetos){
+    const yPred = pendiente*o.volumen + intercepto;
+    SSres += Math.pow(o.masaPromedio - yPred, 2);
+    SStot += Math.pow(o.masaPromedio - promY, 2);
+  }
+  const r2 = 1 - (SSres / SStot);
+  const regDiv = document.getElementById('regresion');
+  regDiv.style.display = 'block';
+  regDiv.innerHTML = `<b>Regresión M vs V</b><br>Pendiente = ${pendiente.toFixed(6)} g/cm³<br>Intercepto = ${intercepto.toFixed(6)} g<br>R² = ${r2.toFixed(6)}<br><small class="muted">La pendiente es una estimación de la densidad por regresión.</small>`;
+});
+
+/* comparar con densidad teorica */
+document.getElementById('compBtn').addEventListener('click', () => {
+  if(objetos.length===0){ alert('Agrega objetos primero'); return; }
+  const dens = parseFloat(document.getElementById('densTeorica').value);
+  if(!dens || dens<=0){ alert('Ingresa densidad teorica valida'); return; }
+  // densidad promedio calculada como promedio simple de densidades
+  let sumaD=0, sumaE2=0;
+  for(let o of objetos){ sumaD += o.densidad; sumaE2 += Math.pow(o.errorDensidad,2); }
+  const densProm = sumaD / objetos.length;
+  const errProm = Math.sqrt(sumaE2) / objetos.length;
+  // obtener pendiente from regression if available
+  let pendiente = null;
+  if(objetos.length>=2){
+    let n=objetos.length, sumX=0, sumY=0, sumXY=0, sumX2=0;
+    for(let o of objetos){ const x=o.volumen, y=o.masaPromedio; sumX+=x; sumY+=y; sumXY+=x*y; sumX2+=x*x; }
+    pendiente = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX);
+  }
+  const errRelProm = Math.abs((densProm - dens)/dens)*100;
+  const compRes = document.getElementById('compRes');
+  compRes.innerHTML = `Densidad promedio = ${densProm.toFixed(6)} ± ${errProm.toFixed(6)} g/cm³<br>Error relativo (promedio) = ${errRelProm.toFixed(2)}%` + (pendiente ? `<br> Densidad (pendiente regresión) = ${pendiente.toFixed(6)} g/cm³` : '');
+});
+
+/* inicial */
+updateFields();
+
+</script>
 </body>
 </html>
-
